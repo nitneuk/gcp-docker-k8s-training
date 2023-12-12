@@ -1,0 +1,27 @@
+# deployment.yaml
+apiVersion: apps/v1 # La version de l'API K8s utilisée
+kind: Deployment # Le type d'object décrit
+metadata: # Les noms et labels de notre object
+  name: my-deployment
+  labels:
+    app: my-app
+spec: # La définition du déploiement
+  replicas: 3 # Le nombre de pods souhaité (pour la scalabilité)
+  selector: # Comment doivent être matchés les pods à surveiller
+    matchLabels:
+      app: my-app
+  template: # Le template des objects Pod à créer
+    metadata:
+      labels:
+        app: my-app # Ici il faut que ça match avec le selector définit plus haut
+    spec:
+      containers:
+      - name: nginx
+        image: nginx # Le nom de notre image Docker !
+        env:
+          - name: APP_ENV
+            value: prod
+        ports:
+          - containerPort: 80 # Le port du container à rendre accessible
+                              # ce port n'est PAS exposé sur le Node !!
+
