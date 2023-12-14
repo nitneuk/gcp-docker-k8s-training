@@ -1,0 +1,80 @@
+EXERCICES # 1
+- docker network create example-app
+- docker run --rm -v $(pwd):/app -w /app/public -p 8000:8000 --network=example-app --name=php php:8.2-alpine -S 0.0.0.0:8000
+- docker run --rm --name postgres -p 5432:5432 -e POSTGRES_USER=enigma -e POSTGRES_PASSWORD=password -e POSTGRES_DB=movie_store -v ${PWD}/.infrastructure/resources/init.sql:/docker-entrypoint-initdb.d/init.sql --network=example-app postgres:16
+
+# 2
+- docker run --rm -v $(pwd):/app -w /app composer install
+
+- compose.yaml
+version: "3"
+
+services:
+  php:
+    image: php:8.2-alpine
+    working_dir: /app/public
+    volumes:
+      - ${PWD}:/app
+    environment:
+      - PG_DSN=pgsql:host=postgres;port=5432;dbname=movie_store;
+      - PG_USER=enigma
+      - PG_PASSWORD=password
+    ports:
+      - "8000:8000"
+    command:
+      - -S
+      - 0.0.0.0:8000
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=enigma
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movie_store
+    volumes:
+      - ${PWD}/.infrastructure/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+
+# 2
+- .infrastructure/docker/php
+FROM php:8.2-fpm-alpine
+RUN apk --no-cache add postgresql-dev ; \
+    docker-php-ext-install pdo pdo_pgsql
+COPY .infrastructure/resources/php.conf /usr/local/etc/php-fpm.d/www.conf
+
+- .infrastructure/docker/nginx
+FROM nginx:1.25-alpine
+COPY .infrastructure/resources/nginx.conf /etc/nginx/conf.d/default.conf
+
+- compose.yaml
+version: "3"
+
+services:
+  php:
+    build:
+      context: .
+      dockerfile: .infrastructure/docker/php/Dockerfile
+    environment:
+      - PG_DSN=pgsql:host=postgres;port=5432;dbname=movie_store;
+      - PG_USER=enigma
+      - PG_PASSWORD=password
+    volumes:
+      - .:/app
+
+  nginx:
+    build:
+      context: .
+      dockerfile: .infrastructure/docker/nginx/Dockerfile
+    ports:
+      - "8000:80"
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=enigma
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movie_store
+    volumes:
+      - .infrastructure/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+# 3

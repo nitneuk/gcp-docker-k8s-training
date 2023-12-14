@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-store-deployment
+  labels:
+    app: movie-store
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: movie-store
+  template:
+    metadata:
+      labels:
+        app: movie-store
+    spec:
+      containers:
+        - name: php
+          image: europe-west1-docker.pkg.dev/integral-vim-407317/quentin/php:1.4.0
+          imagePullPolicy: Always
+          env:
+            - name: APP_ENV
+              value: prod
+          ports:
+            - containerPort: 9000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100M
+            limits:
+              cpu: 100m
+              memory: 200M
+          startupProbe:
+            tcpSocket:
+              port: 9000
+          readinessProbe:
+            httpGet:
+              port: 80
+              path: /list
+        - name: nginx
+          image: europe-west1-docker.pkg.dev/integral-vim-407317/quentin/nginx:1.2.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          startupProbe:
+            tcpSocket:
+              port: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100M

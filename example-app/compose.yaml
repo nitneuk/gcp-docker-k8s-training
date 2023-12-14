@@ -1,0 +1,35 @@
+version: "3"
+
+services:
+  php:
+    platform: linux/amd64
+    image: my-php
+    build:
+      context: .
+      dockerfile: .infrastructure/docker/php/Dockerfile
+    environment:
+      - PG_DSN=pgsql:host=postgres;port=5432;dbname=movie_store;
+      - PG_USER=enigma
+      - PG_PASSWORD=password
+    volumes:
+      - .:/app
+
+  nginx:
+    platform: linux/amd64
+    image: my-nginx
+    build:
+      context: .
+      dockerfile: .infrastructure/docker/nginx/Dockerfile
+    environment:
+      - NGINX_HOST=php
+    ports:
+      - "8000:80"
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=enigma
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=movie_store
+    volumes:
+      - .infrastructure/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
